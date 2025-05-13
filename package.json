@@ -1,0 +1,26 @@
+{
+  "name": "jujujam",
+  "version": "1.0.0",
+  "description": "Social planning app for coordinating events with friends",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AaravSingh2/JuJuJam.git"
+  },
+  "keywords": [
+    "social",
+    "planning",
+    "events"
+  ],
+  "author": "Aarav Singh",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AaravSingh2/JuJuJam/issues"
+  },
+  "homepage": "https://github.com/AaravSingh2/JuJuJam#readme"
+}
