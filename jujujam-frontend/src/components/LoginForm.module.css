@@ -1,0 +1,112 @@
+.formContainer {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #7e22ce; /* Primary color */
+}
+
+.errorMessage {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border-radius: 8px;
+}
+
+.formField {
+  margin-bottom: 16px;
+}
+
+.label {
+  display: block;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+
+.submitButton {
+  width: 100%;
+  background-color: #7e22ce;
+  color: white;
+  font-weight: 500;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-bottom: 16px;
+}
+
+.submitButton:hover {
+  background-color: #6b21a8;
+}
+
+.submitButton:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.divider {
+  position: relative;
+  margin: 24px 0;
+  text-align: center;
+}
+
+.dividerLine {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dividerText {
+  position: relative;
+  display: inline-block;
+  padding: 0 8px;
+  background-color: white;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.linkContainer {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.linkText {
+  color: #6b7280;
+}
+
+.link {
+  color: #7e22ce;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

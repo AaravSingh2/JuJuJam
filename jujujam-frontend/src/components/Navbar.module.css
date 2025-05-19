@@ -1,0 +1,76 @@
+.navbar {
+  background-color: #7e22ce;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  text-decoration: none;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.navLink {
+  color: white;
+  text-decoration: none;
+  transition: opacity 0.3s;
+}
+
+.navLink:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+.welcomeText {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .welcomeText {
+    display: inline;
+  }
+}
+
+.logoutButton {
+  background-color: #6b21a8;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logoutButton:hover {
+  background-color: #581c87;
+}
+
+.registerButton {
+  background-color: white;
+  color: #7e22ce;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.registerButton:hover {
+  background-color: #f9fafb;
+}
