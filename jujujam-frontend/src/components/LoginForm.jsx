@@ -1,3 +1,4 @@
+// src/components/LoginForm/LoginForm.jsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +12,7 @@ const LoginForm = () => {
   });
   const [error, setError] = useState('');
   
-  const { login, loading } = useAuth();
+  const { login, loading, error: authError } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -30,11 +31,8 @@ const LoginForm = () => {
       await login(formData);
       navigate('/dashboard');
     } catch (err) {
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('An error occurred during login. Please try again.');
-      }
+      // Error is already handled in the AuthContext
+      console.error('Login error:', err);
     }
   };
 
@@ -43,69 +41,78 @@ const LoginForm = () => {
   };
 
   return (
-    <div className={styles.formContainer}>
-      <h2 className={styles.title}>Login to JujuJam</h2>
-      
-      {error && (
-        <div className={styles.errorMessage}>
-          {error}
+    <div className={styles.loginContainer}>
+      <div className={styles.bgContainer}>
+        <div className={styles.bgImage}></div>
+        <div className={styles.formWrapper}>
+          <div className={styles.formContent}>
+            <h1 className={styles.title}>Let's Gather</h1>
+            <p className={styles.subtitle}>Manage your social gatherings and plans with friends</p>
+            
+            {(error || authError) && (
+              <div className={styles.errorMessage}>
+                {error || authError}
+              </div>
+            )}
+            
+            <form onSubmit={handleSubmit}>
+              <div className={styles.inputGroup}>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  className={styles.input}
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Email address"
+                  required
+                />
+              </div>
+              
+              <div className={styles.inputGroup}>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  className={styles.input}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  required
+                />
+              </div>
+              
+              <div className={styles.forgotPasswordLink}>
+                <Link to="/forgot-password">Forgot password?</Link>
+              </div>
+              
+              <button
+                type="submit"
+                className={styles.submitButton}
+                disabled={loading}
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+            
+            <div className={styles.divider}>
+              <div className={styles.dividerLine}></div>
+              <span className={styles.dividerText}>Or</span>
+              <div className={styles.dividerLine}></div>
+            </div>
+            
+            <GoogleLoginButton onSuccess={handleGoogleSuccess} />
+            
+            <div className={styles.linkContainer}>
+              <p className={styles.linkText}>
+                Don't have an account?{' '}
+                <Link to="/register" className={styles.signupLink}>
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          </div>
         </div>
-      )}
-      
-      <form onSubmit={handleSubmit}>
-        <div className={styles.formField}>
-          <label className={styles.label} htmlFor="email">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            className={styles.input}
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        
-        <div className={styles.formField}>
-          <label className={styles.label} htmlFor="password">
-            Password
-          </label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            className={styles.input}
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        
-        <button
-          type="submit"
-          className={styles.submitButton}
-          disabled={loading}
-        >
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-      
-      <div className={styles.divider}>
-        <div className={styles.dividerLine}></div>
-        <span className={styles.dividerText}>Or</span>
-      </div>
-      
-      <GoogleLoginButton onSuccess={handleGoogleSuccess} />
-      
-      <div className={styles.linkContainer}>
-        <p className={styles.linkText}>
-          Don't have an account?{' '}
-          <Link to="/register" className={styles.link}>
-            Register
-          </Link>
-        </p>
       </div>
     </div>
   );
