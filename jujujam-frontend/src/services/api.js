@@ -1,3 +1,4 @@
+// jujujam-frontend/src/services/api.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
@@ -24,8 +25,8 @@ api.interceptors.request.use(
   }
 );
 
-// Authentication services
-export const auth = {
+// Create a separate auth object
+const authService = {
   // Register new user
   register: (userData) => api.post('/auth/register', userData),
   
@@ -33,7 +34,7 @@ export const auth = {
   login: (credentials) => api.post('/auth/login', credentials),
   
   // Google authentication
-  googleAuth: (idToken) => api.post('/auth/google', { idToken }),
+  googleAuth: (tokenData) => api.post('/auth/google', tokenData),
   
   // Get current user profile
   getCurrentUser: () => api.get('/auth/me'),
@@ -44,4 +45,6 @@ export const auth = {
   },
 };
 
+// Export both the api instance and the auth service separately
+export { authService };
 export default api;

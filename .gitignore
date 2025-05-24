@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-
+jujujam-backend/src/config/credentials/
 # Environment variables
 .env
 

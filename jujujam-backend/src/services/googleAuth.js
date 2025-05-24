@@ -1,3 +1,4 @@
+// src/services/googleAuth.js
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/Users');
 
@@ -21,6 +22,7 @@ const verifyGoogleToken = async (token) => {
       lastName: payload.family_name,
       picture: payload.picture,
       googleId: payload.sub,
+      firebaseId: payload.firebase ? payload.firebase.sign_in_provider : null
     };
   } catch (error) {
     console.error('Error verifying Google token:', error);
@@ -45,6 +47,9 @@ const findOrCreateGoogleUser = async (userData) => {
       // Update Google ID if not already set
       if (!user.googleId) {
         user.googleId = userData.googleId;
+        if (userData.firebaseId) {
+          user.firebaseId = userData.firebaseId;
+        }
         if (!user.profilePicture || user.profilePicture === 'default-avatar.png') {
           user.profilePicture = userData.picture;
         }
@@ -62,6 +67,7 @@ const findOrCreateGoogleUser = async (userData) => {
       displayName: userData.displayName,
       profilePicture: userData.picture,
       googleId: userData.googleId,
+      firebaseId: userData.firebaseId,
       isVerified: true, // Google accounts are pre-verified
       password: Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8) // Random password
     });

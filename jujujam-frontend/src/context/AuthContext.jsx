@@ -1,4 +1,4 @@
-// src/context/AuthContext.jsx
+// jujujam-frontend/src/context/AuthContext.jsx
 import { createContext, useState, useEffect, useContext } from 'react';
 import { 
   signInWithEmailAndPassword, 
@@ -9,7 +9,8 @@ import {
   signInWithPopup,
   updateProfile
 } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth as firebaseAuth } from '../firebase';
+import { authService } from '../services/api'; // Import authService explicitly
 
 const AuthContext = createContext();
 
@@ -20,8 +21,39 @@ export const AuthProvider = ({ children }) => {
 
   // Listen for auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+      if (user) {
+        try {
+          // Get token
+          const token = await user.getIdToken();
+          // Store token in localStorage
+          localStorage.setItem('token', token);
+          
+          try {
+            // Try to get user data from our backend
+            const response = await authService.getCurrentUser(); // Use authService
+            if (response && response.data && response.data.success) {
+              // If successful, merge Firebase user with our backend user data
+              setCurrentUser({
+                ...user,
+                ...response.data.user
+              });
+            } else {
+              setCurrentUser(user);
+            }
+          } catch (err) {
+            // If backend request fails, still set the Firebase user
+            setCurrentUser(user);
+            console.error('Error fetching user from backend:', err);
+          }
+        } catch (err) {
+          console.error('Error getting ID token:', err);
+          setCurrentUser(user);
+        }
+      } else {
+        localStorage.removeItem('token');
+        setCurrentUser(null);
+      }
       setLoading(false);
     });
 
@@ -33,19 +65,39 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
+      // First create user in Firebase
+      const result = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       
       // Update profile with display name
       await updateProfile(result.user, {
-        displayName: displayName,
-        // Store username in photoURL temporarily (not ideal but works for now)
-        // In a real app, you'd store this in your database
-        photoURL: `username:${username}`
+        displayName: displayName
       });
+
+      // Get Firebase ID token
+      const token = await result.user.getIdToken();
+      
+      // Send user data to our backend
+      try {
+        const backendResponse = await authService.register({ // Use authService
+          email,
+          username,
+          displayName,
+          password, // This will be re-hashed on the backend
+          firebaseId: result.user.uid
+        });
+
+        // Store the JWT token from our backend
+        if (backendResponse && backendResponse.data && backendResponse.data.token) {
+          localStorage.setItem('token', backendResponse.data.token);
+        }
+      } catch (backendErr) {
+        console.error("Backend registration error:", backendErr);
+        // Continue even if backend registration fails
+      }
 
       // Force refresh to ensure we have the latest user data
       await result.user.reload();
-      setCurrentUser(auth.currentUser);
+      setCurrentUser(firebaseAuth.currentUser);
       
       return result.user;
     } catch (err) {
@@ -61,9 +113,37 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      // First authenticate with Firebase
+      const result = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      
+      // Get Firebase ID token
+      const token = await result.user.getIdToken();
+      
+      // Send token to our backend for validation and to get our JWT
+      try {
+        console.log("Sending to backend:", { email, password, firebaseId: result.user.uid });
+        const backendResponse = await authService.login({ // Use authService
+          email,
+          password,
+          firebaseId: result.user.uid
+        });
+        console.log("Backend response:", backendResponse);
+
+        // Store the JWT token from our backend
+        if (backendResponse && backendResponse.data && backendResponse.data.token) {
+          localStorage.setItem('token', backendResponse.data.token);
+        }
+      } catch (backendErr) {
+        console.error("Backend login error:", backendErr);
+        // Continue even if backend login fails
+      }
+
+      // Update current user
+      setCurrentUser(result.user);
+      
       return result.user;
     } catch (err) {
+      console.error("Login error:", err);
       setError(getFirebaseErrorMessage(err));
       throw err;
     } finally {
@@ -77,7 +157,27 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(firebaseAuth, provider);
+      
+      // Get ID token from Firebase
+      const idToken = await result.user.getIdToken();
+      
+      // Send to backend
+      try {
+        const backendResponse = await authService.googleAuth({ idToken }); // Use authService
+        
+        // Store the JWT token from our backend
+        if (backendResponse && backendResponse.data && backendResponse.data.token) {
+          localStorage.setItem('token', backendResponse.data.token);
+        }
+      } catch (backendErr) {
+        console.error("Backend Google login error:", backendErr);
+        // Continue even if backend Google login fails
+      }
+      
+      // Update current user
+      setCurrentUser(result.user);
+      
       return result.user;
     } catch (err) {
       setError(getFirebaseErrorMessage(err));
@@ -90,7 +190,9 @@ export const AuthProvider = ({ children }) => {
   // Logout user
   const logout = async () => {
     try {
-      await signOut(auth);
+      await signOut(firebaseAuth);
+      localStorage.removeItem('token');
+      setCurrentUser(null);
     } catch (err) {
       setError(getFirebaseErrorMessage(err));
       throw err;

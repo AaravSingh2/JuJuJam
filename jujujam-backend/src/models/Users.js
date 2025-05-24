@@ -1,3 +1,4 @@
+// src/models/Users.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -52,15 +53,16 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
-  // Add these fields to the userSchema
-googleId: {
-  type: String,
-  sparse: true
-},
-isVerified: {
-  type: Boolean,
-  default: false
-},
+  // Firebase auth fields
+  firebaseId: {
+    type: String,
+    sparse: true, // Allow null values but enforce uniqueness when present
+    unique: true
+  },
+  googleId: {
+    type: String,
+    sparse: true
+  },
 }, {
   timestamps: true
 });
@@ -92,7 +94,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 // Generate JWT token
 userSchema.methods.generateAuthToken = function() {
   return jwt.sign(
-    { id: this._id, username: this.username }, 
+    { id: this._id, username: this.username, firebaseId: this.firebaseId }, 
     process.env.JWT_SECRET, 
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
