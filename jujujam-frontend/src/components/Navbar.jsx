@@ -1,3 +1,4 @@
+// jujujam-frontend/src/components/Navbar.jsx
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import styles from './Navbar.module.css';
@@ -15,6 +16,7 @@ const Navbar = () => {
             <>
               <span className={styles.welcomeText}>Hi, {currentUser.displayName}</span>
               <Link to="/dashboard" className={styles.navLink}>Dashboard</Link>
+              <Link to="/discover" className={styles.navLink}>Discover</Link>
               <button 
                 onClick={logout}
                 className={styles.logoutButton}

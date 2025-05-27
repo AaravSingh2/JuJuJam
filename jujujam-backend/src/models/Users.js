@@ -99,6 +99,65 @@ userSchema.methods.generateAuthToken = function() {
     { expiresIn: process.env.JWT_EXPIRES_IN }
   );
 };
+// Update jujujam-backend/src/models/Users.js
+
+// Add these methods to the User schema before creating the model
+
+// Find all friendships (regardless of status)
+userSchema.methods.getAllFriendships = async function() {
+  return await mongoose.model('Friendship').find({
+    $or: [
+      { requester: this._id },
+      { recipient: this._id }
+    ]
+  }).populate('requester recipient', 'username displayName profilePicture');
+};
+
+// Find only accepted friendships
+userSchema.methods.getFriends = async function() {
+  const friendships = await mongoose.model('Friendship').find({
+    $or: [
+      { requester: this._id, status: 'accepted' },
+      { recipient: this._id, status: 'accepted' }
+    ]
+  }).populate('requester recipient', 'username displayName profilePicture');
+  
+  // Return the other user in each friendship (not the current user)
+  return friendships.map(friendship => {
+    return friendship.requester._id.equals(this._id) 
+      ? friendship.recipient 
+      : friendship.requester;
+  });
+};
+
+// Find pending friend requests sent by this user
+userSchema.methods.getPendingRequests = async function() {
+  return await mongoose.model('Friendship').find({
+    requester: this._id,
+    status: 'pending'
+  }).populate('recipient', 'username displayName profilePicture');
+};
+
+// Find pending friend requests received by this user
+userSchema.methods.getFriendRequests = async function() {
+  return await mongoose.model('Friendship').find({
+    recipient: this._id,
+    status: 'pending'
+  }).populate('requester', 'username displayName profilePicture');
+};
+
+// Check if users are friends
+userSchema.methods.isFriendWith = async function(userId) {
+  const friendship = await mongoose.model('Friendship').findOne({
+    $or: [
+      { requester: this._id, recipient: userId },
+      { requester: userId, recipient: this._id }
+    ],
+    status: 'accepted'
+  });
+  
+  return !!friendship;
+};
 
 const User = mongoose.model('User', userSchema);
 

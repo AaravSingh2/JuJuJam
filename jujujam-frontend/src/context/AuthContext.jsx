@@ -10,49 +10,26 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth as firebaseAuth } from '../firebase';
-import { authService } from '../services/api'; // Import authService explicitly
+import { authService } from '../services/api';
 
+// Create the context
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isBackendAuthenticated, setIsBackendAuthenticated] = useState(false);
 
   // Listen for auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
       if (user) {
-        try {
-          // Get token
-          const token = await user.getIdToken();
-          // Store token in localStorage
-          localStorage.setItem('token', token);
-          
-          try {
-            // Try to get user data from our backend
-            const response = await authService.getCurrentUser(); // Use authService
-            if (response && response.data && response.data.success) {
-              // If successful, merge Firebase user with our backend user data
-              setCurrentUser({
-                ...user,
-                ...response.data.user
-              });
-            } else {
-              setCurrentUser(user);
-            }
-          } catch (err) {
-            // If backend request fails, still set the Firebase user
-            setCurrentUser(user);
-            console.error('Error fetching user from backend:', err);
-          }
-        } catch (err) {
-          console.error('Error getting ID token:', err);
-          setCurrentUser(user);
-        }
+        setCurrentUser(user);
       } else {
         localStorage.removeItem('token');
         setCurrentUser(null);
+        setIsBackendAuthenticated(false);
       }
       setLoading(false);
     });
@@ -65,37 +42,28 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      // First create user in Firebase
       const result = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       
-      // Update profile with display name
       await updateProfile(result.user, {
         displayName: displayName
       });
 
-      // Get Firebase ID token
-      const token = await result.user.getIdToken();
-      
-      // Send user data to our backend
-      try {
-        const backendResponse = await authService.register({ // Use authService
-          email,
-          username,
-          displayName,
-          password, // This will be re-hashed on the backend
-          firebaseId: result.user.uid
-        });
+      console.log("Sending registration to backend...");
+      const backendResponse = await authService.register({
+        email,
+        username,
+        displayName,
+        password,
+        firebaseId: result.user.uid
+      });
+      console.log("Backend registration response:", backendResponse.data);
 
-        // Store the JWT token from our backend
-        if (backendResponse && backendResponse.data && backendResponse.data.token) {
-          localStorage.setItem('token', backendResponse.data.token);
-        }
-      } catch (backendErr) {
-        console.error("Backend registration error:", backendErr);
-        // Continue even if backend registration fails
+      if (backendResponse && backendResponse.data && backendResponse.data.token) {
+        localStorage.setItem('token', backendResponse.data.token);
+        console.log("Backend JWT token stored");
+        setIsBackendAuthenticated(true);
       }
 
-      // Force refresh to ensure we have the latest user data
       await result.user.reload();
       setCurrentUser(firebaseAuth.currentUser);
       
@@ -113,32 +81,22 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      // First authenticate with Firebase
       const result = await signInWithEmailAndPassword(firebaseAuth, email, password);
       
-      // Get Firebase ID token
-      const token = await result.user.getIdToken();
-      
-      // Send token to our backend for validation and to get our JWT
-      try {
-        console.log("Sending to backend:", { email, password, firebaseId: result.user.uid });
-        const backendResponse = await authService.login({ // Use authService
-          email,
-          password,
-          firebaseId: result.user.uid
-        });
-        console.log("Backend response:", backendResponse);
+      console.log("Sending login to backend...");
+      const backendResponse = await authService.login({
+        email,
+        password,
+        firebaseId: result.user.uid
+      });
+      console.log("Backend login response:", backendResponse.data);
 
-        // Store the JWT token from our backend
-        if (backendResponse && backendResponse.data && backendResponse.data.token) {
-          localStorage.setItem('token', backendResponse.data.token);
-        }
-      } catch (backendErr) {
-        console.error("Backend login error:", backendErr);
-        // Continue even if backend login fails
+      if (backendResponse && backendResponse.data && backendResponse.data.token) {
+        localStorage.setItem('token', backendResponse.data.token);
+        console.log("Backend JWT token stored, replacing Firebase token");
+        setIsBackendAuthenticated(true);
       }
 
-      // Update current user
       setCurrentUser(result.user);
       
       return result.user;
@@ -159,23 +117,18 @@ export const AuthProvider = ({ children }) => {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(firebaseAuth, provider);
       
-      // Get ID token from Firebase
       const idToken = await result.user.getIdToken();
       
-      // Send to backend
-      try {
-        const backendResponse = await authService.googleAuth({ idToken }); // Use authService
-        
-        // Store the JWT token from our backend
-        if (backendResponse && backendResponse.data && backendResponse.data.token) {
-          localStorage.setItem('token', backendResponse.data.token);
-        }
-      } catch (backendErr) {
-        console.error("Backend Google login error:", backendErr);
-        // Continue even if backend Google login fails
+      console.log("Sending Google login to backend...");
+      const backendResponse = await authService.googleAuth({ idToken });
+      console.log("Backend Google response:", backendResponse.data);
+      
+      if (backendResponse && backendResponse.data && backendResponse.data.token) {
+        localStorage.setItem('token', backendResponse.data.token);
+        console.log("Backend JWT token stored");
+        setIsBackendAuthenticated(true);
       }
       
-      // Update current user
       setCurrentUser(result.user);
       
       return result.user;
@@ -193,6 +146,7 @@ export const AuthProvider = ({ children }) => {
       await signOut(firebaseAuth);
       localStorage.removeItem('token');
       setCurrentUser(null);
+      setIsBackendAuthenticated(false);
     } catch (err) {
       setError(getFirebaseErrorMessage(err));
       throw err;
@@ -223,6 +177,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     loading,
     error,
+    isBackendAuthenticated,
     register,
     login,
     googleLogin,
@@ -232,4 +187,11 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
